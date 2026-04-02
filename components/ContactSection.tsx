@@ -2,9 +2,10 @@
 
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
-import { companyData } from "@/lib/data";
+import { useSiteData } from "@/lib/DataContext";
 
 export default function ContactSection() {
+  const { companyData } = useSiteData();
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.15 });
 
   return (

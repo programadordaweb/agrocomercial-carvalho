@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
-import { schedule } from "@/lib/data";
+import { useSiteData } from "@/lib/DataContext";
 
 function useIsOpen() {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,6 +26,7 @@ function useIsOpen() {
 }
 
 export default function ScheduleSection() {
+  const { schedule } = useSiteData();
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.2 });
   const isOpen = useIsOpen();
 
