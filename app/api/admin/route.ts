@@ -1,57 +1,50 @@
 import { NextResponse } from "next/server";
-import { readFile, writeFile } from "fs/promises";
-import path from "path";
-
-const DATA_PATH = path.join(process.cwd(), "data.json");
+import pool, { getSiteData } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-async function readData() {
-  const raw = await readFile(DATA_PATH, "utf-8");
-  return JSON.parse(raw);
-}
-
 export async function GET() {
   try {
-    const data = await readData();
+    const data = await getSiteData();
     return NextResponse.json(data);
-  } catch {
+  } catch (err) {
+    console.error("DB Error:", err);
     return NextResponse.json({ error: "Erro ao ler dados" }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
+  const conn = await pool.getConnection();
   try {
     const body = await request.json();
-    const data = await readData();
 
     if (body.companyData) {
-      data.companyData = {
-        ...data.companyData,
-        name: body.companyData.name,
-        slogan: body.companyData.slogan,
-        address: body.companyData.address,
-        phone: body.companyData.phone,
-        phoneRaw: body.companyData.phoneRaw,
-        whatsappMessage: body.companyData.whatsappMessage || data.companyData.whatsappMessage,
-        rating: body.companyData.rating,
-        reviewCount: body.companyData.reviewCount,
-        mapsEmbed: body.companyData.mapsEmbed,
-        mapsLink: body.companyData.mapsLink,
-      };
+      const c = body.companyData;
+      await conn.query(
+        `UPDATE company_data SET name=?, slogan=?, address=?, phone=?, phone_raw=?, whatsapp_message=?, rating=?, review_count=?, maps_embed=?, maps_link=? WHERE id=1`,
+        [c.name, c.slogan, c.address, c.phone, c.phoneRaw, c.whatsappMessage || c.whatsapp_message, c.rating, c.reviewCount, c.mapsEmbed, c.mapsLink]
+      );
     }
 
     if (body.reviews) {
-      data.reviews = body.reviews;
+      await conn.query("DELETE FROM reviews");
+      for (const r of body.reviews) {
+        await conn.query("INSERT INTO reviews (name, text, stars) VALUES (?, ?, ?)", [r.name, r.text, r.stars]);
+      }
     }
 
     if (body.schedule) {
-      data.schedule = body.schedule;
+      await conn.query("DELETE FROM schedule");
+      for (const s of body.schedule) {
+        await conn.query("INSERT INTO schedule (day, hours, is_open) VALUES (?, ?, ?)", [s.day, s.hours, s.open]);
+      }
     }
 
-    await writeFile(DATA_PATH, JSON.stringify(data, null, 2), "utf-8");
     return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: "Erro ao salvar dados" }, { status: 500 });
+  } catch (err) {
+    console.error("DB Error:", err);
+    return NextResponse.json({ error: "Erro ao salvar" }, { status: 500 });
+  } finally {
+    conn.release();
   }
 }

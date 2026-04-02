@@ -1,29 +1,18 @@
-import Header from "@/components/Header";
-import HeroSection from "@/components/HeroSection";
-import AboutSection from "@/components/AboutSection";
-import ProductsSection from "@/components/ProductsSection";
-import ServicesSection from "@/components/ServicesSection";
-import ScheduleSection from "@/components/ScheduleSection";
-import ReviewsSection from "@/components/ReviewsSection";
-import ContactSection from "@/components/ContactSection";
-import Footer from "@/components/Footer";
-import WhatsAppButton from "@/components/WhatsAppButton";
-import Analytics from "@/components/Analytics";
+"use client";
+
+import dynamic from "next/dynamic";
+
+const SiteContent = dynamic(() => import("@/components/SiteContent"), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-screen bg-brand-cream flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-12 h-12 border-4 border-green-200 border-t-green-700 rounded-full animate-spin mx-auto mb-4" />
+      </div>
+    </div>
+  ),
+});
 
 export default function Home() {
-  return (
-    <main className="flex-1">
-      <Analytics />
-      <Header />
-      <HeroSection />
-      <AboutSection />
-      <ProductsSection />
-      <ServicesSection />
-      <ScheduleSection />
-      <ReviewsSection />
-      <ContactSection />
-      <Footer />
-      <WhatsAppButton />
-    </main>
-  );
+  return <SiteContent />;
 }
