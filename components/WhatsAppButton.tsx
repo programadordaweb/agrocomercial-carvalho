@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useSiteData } from "@/lib/DataContext";
+import { companyData } from "@/lib/data";
 
 export default function WhatsAppButton() {
-  const { companyData } = useSiteData();
   const [hovered, setHovered] = useState(false);
 
   return (
