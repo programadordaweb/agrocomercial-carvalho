@@ -3,10 +3,9 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSiteData } from "@/lib/DataContext";
+import { navLinks, companyData } from "@/lib/data";
 
 export default function Header() {
-  const { companyData, navLinks } = useSiteData();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("#inicio");

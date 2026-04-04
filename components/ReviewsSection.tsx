@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInView } from "react-intersection-observer";
-import { useSiteData } from "@/lib/DataContext";
+import { reviews } from "@/lib/data";
 
 const slideVariants = {
   enter: (dir: number) => ({ x: dir > 0 ? 200 : -200, opacity: 0 }),
@@ -20,7 +20,6 @@ const avatarColors = [
 ];
 
 export default function ReviewsSection() {
-  const { reviews } = useSiteData();
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.2 });
   const [[current, direction], setCurrent] = useState([0, 0]);
 

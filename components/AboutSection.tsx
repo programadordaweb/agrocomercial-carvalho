@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
-import { useSiteData } from "@/lib/DataContext";
+import { aboutFeatures } from "@/lib/data";
 
 const featureIcons: Record<string, React.ReactNode> = {
   Qualidade: (
@@ -29,7 +29,6 @@ const featureIcons: Record<string, React.ReactNode> = {
 };
 
 export default function AboutSection() {
-  const { aboutFeatures } = useSiteData();
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.15 });
 
   return (

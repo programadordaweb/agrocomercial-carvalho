@@ -6,79 +6,55 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const selectedDate = searchParams.get("date");
-  const conn = await pool.getConnection();
 
+  let conn;
   try {
+    conn = await pool.getConnection();
     const now = new Date();
     const today = now.toISOString().split("T")[0];
 
-    // Today stats
-    const [todayVisitsRows] = await conn.query(
-      "SELECT COUNT(*) as c FROM analytics_visits WHERE DATE(timestamp) = ?", [today]
+    const [todayV] = await conn.query("SELECT COUNT(*) as c FROM analytics_visits WHERE DATE(timestamp) = ?", [today]);
+    const [todayC] = await conn.query("SELECT COUNT(*) as c FROM analytics_whatsapp WHERE DATE(timestamp) = ?", [today]);
+    const [last30V] = await conn.query("SELECT COUNT(*) as c FROM analytics_visits WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+    const [last30C] = await conn.query("SELECT COUNT(*) as c FROM analytics_whatsapp WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+    const [totalV] = await conn.query("SELECT COUNT(*) as c FROM analytics_visits");
+    const [totalC] = await conn.query("SELECT COUNT(*) as c FROM analytics_whatsapp");
+
+    // Chart: last 30 days
+    const [vByDay] = await conn.query(
+      "SELECT DATE(timestamp) as d, COUNT(*) as c FROM analytics_visits WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY DATE(timestamp)"
     );
-    const [todayClicksRows] = await conn.query(
-      "SELECT COUNT(*) as c FROM analytics_whatsapp WHERE DATE(timestamp) = ?", [today]
+    const [cByDay] = await conn.query(
+      "SELECT DATE(timestamp) as d, COUNT(*) as c FROM analytics_whatsapp WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY DATE(timestamp)"
     );
 
-    // Last 30 days
-    const [last30VisitsRows] = await conn.query(
-      "SELECT COUNT(*) as c FROM analytics_visits WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)"
-    );
-    const [last30ClicksRows] = await conn.query(
-      "SELECT COUNT(*) as c FROM analytics_whatsapp WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)"
-    );
-
-    // Chart data (last 30 days grouped by day)
-    const [visitsByDay] = await conn.query(
-      `SELECT DATE(timestamp) as date, COUNT(*) as visits FROM analytics_visits
-       WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY DATE(timestamp)`
-    );
-    const [clicksByDay] = await conn.query(
-      `SELECT DATE(timestamp) as date, COUNT(*) as clicks FROM analytics_whatsapp
-       WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY DATE(timestamp)`
-    );
-
-    const visitMap: Record<string, number> = {};
-    const clickMap: Record<string, number> = {};
-    (visitsByDay as { date: string; visits: number }[]).forEach((r) => {
-      visitMap[new Date(r.date).toISOString().split("T")[0]] = r.visits;
-    });
-    (clicksByDay as { date: string; clicks: number }[]).forEach((r) => {
-      clickMap[new Date(r.date).toISOString().split("T")[0]] = r.clicks;
-    });
+    const vMap: Record<string, number> = {};
+    const cMap: Record<string, number> = {};
+    for (const r of vByDay as { d: string; c: number }[]) vMap[new Date(r.d).toISOString().split("T")[0]] = r.c;
+    for (const r of cByDay as { d: string; c: number }[]) cMap[new Date(r.d).toISOString().split("T")[0]] = r.c;
 
     const chartData = [];
     for (let i = 29; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const d = new Date(now.getTime() - i * 86400000);
       const key = d.toISOString().split("T")[0];
       chartData.push({
         date: key,
         label: d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
-        visits: visitMap[key] || 0,
-        whatsapp: clickMap[key] || 0,
+        visits: vMap[key] || 0,
+        whatsapp: cMap[key] || 0,
       });
     }
 
     // Recent WhatsApp
-    const [recentWpp] = await conn.query(
-      "SELECT timestamp, page FROM analytics_whatsapp ORDER BY id DESC LIMIT 20"
-    );
+    const [recentWpp] = await conn.query("SELECT timestamp, page FROM analytics_whatsapp ORDER BY id DESC LIMIT 20");
 
     // Day detail
     let dayDetail = null;
     if (selectedDate) {
-      const [dv] = await conn.query(
-        "SELECT COUNT(*) as c FROM analytics_visits WHERE DATE(timestamp) = ?", [selectedDate]
-      );
-      const [dc] = await conn.query(
-        "SELECT COUNT(*) as c FROM analytics_whatsapp WHERE DATE(timestamp) = ?", [selectedDate]
-      );
-      const [dvList] = await conn.query(
-        "SELECT TIME_FORMAT(timestamp, '%H:%i') as time, page, referrer FROM analytics_visits WHERE DATE(timestamp) = ? ORDER BY timestamp", [selectedDate]
-      );
-      const [dcList] = await conn.query(
-        "SELECT TIME_FORMAT(timestamp, '%H:%i') as time, page FROM analytics_whatsapp WHERE DATE(timestamp) = ? ORDER BY timestamp", [selectedDate]
-      );
+      const [dv] = await conn.query("SELECT COUNT(*) as c FROM analytics_visits WHERE DATE(timestamp) = ?", [selectedDate]);
+      const [dc] = await conn.query("SELECT COUNT(*) as c FROM analytics_whatsapp WHERE DATE(timestamp) = ?", [selectedDate]);
+      const [dvList] = await conn.query("SELECT TIME_FORMAT(timestamp, '%H:%i') as time, page, referrer FROM analytics_visits WHERE DATE(timestamp) = ? ORDER BY timestamp", [selectedDate]);
+      const [dcList] = await conn.query("SELECT TIME_FORMAT(timestamp, '%H:%i') as time, page FROM analytics_whatsapp WHERE DATE(timestamp) = ? ORDER BY timestamp", [selectedDate]);
       dayDetail = {
         date: selectedDate,
         visits: (dv as { c: number }[])[0].c,
@@ -88,65 +64,57 @@ export async function GET(request: Request) {
       };
     }
 
-    // Days with data
-    const [daysVisits] = await conn.query(
-      "SELECT DATE(timestamp) as date, COUNT(*) as visits FROM analytics_visits GROUP BY DATE(timestamp)"
-    );
-    const [daysClicks] = await conn.query(
-      "SELECT DATE(timestamp) as date, COUNT(*) as clicks FROM analytics_whatsapp GROUP BY DATE(timestamp)"
-    );
+    // Days with data for calendar
+    const [dVisits] = await conn.query("SELECT DATE(timestamp) as d, COUNT(*) as c FROM analytics_visits GROUP BY DATE(timestamp)");
+    const [dClicks] = await conn.query("SELECT DATE(timestamp) as d, COUNT(*) as c FROM analytics_whatsapp GROUP BY DATE(timestamp)");
     const daysWithData: Record<string, { visits: number; clicks: number }> = {};
-    (daysVisits as { date: string; visits: number }[]).forEach((r) => {
-      const k = new Date(r.date).toISOString().split("T")[0];
+    for (const r of dVisits as { d: string; c: number }[]) {
+      const k = new Date(r.d).toISOString().split("T")[0];
+      daysWithData[k] = { visits: r.c, clicks: 0 };
+    }
+    for (const r of dClicks as { d: string; c: number }[]) {
+      const k = new Date(r.d).toISOString().split("T")[0];
       if (!daysWithData[k]) daysWithData[k] = { visits: 0, clicks: 0 };
-      daysWithData[k].visits = r.visits;
-    });
-    (daysClicks as { date: string; clicks: number }[]).forEach((r) => {
-      const k = new Date(r.date).toISOString().split("T")[0];
-      if (!daysWithData[k]) daysWithData[k] = { visits: 0, clicks: 0 };
-      daysWithData[k].clicks = r.clicks;
-    });
-
-    // Totals
-    const [totalV] = await conn.query("SELECT COUNT(*) as c FROM analytics_visits");
-    const [totalC] = await conn.query("SELECT COUNT(*) as c FROM analytics_whatsapp");
+      daysWithData[k].clicks = r.c;
+    }
 
     return NextResponse.json({
       totalVisits: (totalV as { c: number }[])[0].c,
       totalClicks: (totalC as { c: number }[])[0].c,
-      todayVisits: (todayVisitsRows as { c: number }[])[0].c,
-      todayClicks: (todayClicksRows as { c: number }[])[0].c,
-      last30Visits: (last30VisitsRows as { c: number }[])[0].c,
-      last30Clicks: (last30ClicksRows as { c: number }[])[0].c,
+      todayVisits: (todayV as { c: number }[])[0].c,
+      todayClicks: (todayC as { c: number }[])[0].c,
+      last30Visits: (last30V as { c: number }[])[0].c,
+      last30Clicks: (last30C as { c: number }[])[0].c,
       chartData,
       recentWhatsApp: recentWpp,
       dayDetail,
       daysWithData,
     });
+  } catch (err) {
+    console.error("Analytics GET error:", err);
+    return NextResponse.json({ error: "Erro ao ler analytics" }, { status: 500 });
   } finally {
-    conn.release();
+    if (conn) conn.release();
   }
 }
 
 export async function POST(request: Request) {
-  const conn = await pool.getConnection();
+  let conn;
   try {
+    conn = await pool.getConnection();
     const body = await request.json();
 
     if (body.type === "visit") {
-      await conn.query(
-        "INSERT INTO analytics_visits (page, referrer, user_agent) VALUES (?, ?, ?)",
-        [body.page || "/", body.referrer || "", body.userAgent || ""]
-      );
+      await conn.query("INSERT INTO analytics_visits (page, referrer, user_agent) VALUES (?, ?, ?)", [body.page || "/", body.referrer || "", body.userAgent || ""]);
     } else if (body.type === "whatsapp") {
-      await conn.query(
-        "INSERT INTO analytics_whatsapp (page) VALUES (?)",
-        [body.page || "/"]
-      );
+      await conn.query("INSERT INTO analytics_whatsapp (page) VALUES (?)", [body.page || "/"]);
     }
 
     return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("Analytics POST error:", err);
+    return NextResponse.json({ error: "Erro" }, { status: 500 });
   } finally {
-    conn.release();
+    if (conn) conn.release();
   }
 }
