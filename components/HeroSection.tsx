@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
-import { companyData } from "@/lib/data";
+import { useSiteData } from "@/components/SiteClient";
 
 function CountUpNumber({ end, decimals = 0 }: { end: number; decimals?: number }) {
   const [count, setCount] = useState(0);
@@ -29,6 +29,7 @@ function CountUpNumber({ end, decimals = 0 }: { end: number; decimals?: number }
 }
 
 export default function HeroSection() {
+  const { companyData } = useSiteData();
   const [loaded, setLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 

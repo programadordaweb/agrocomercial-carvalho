@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model CompanyData {
+  id              Int    @id @default(autoincrement())
+  name            String @db.VarChar(255)
+  slogan          String? @db.VarChar(255)
+  address         String? @db.VarChar(500)
+  phone           String? @db.VarChar(50)
+  phoneRaw        String? @map("phone_raw") @db.VarChar(50)
+  whatsappMessage String? @map("whatsapp_message") @db.Text
+  rating          Decimal? @db.Decimal(2, 1)
+  reviewCount     Int?    @map("review_count")
+  mapsEmbed       String? @map("maps_embed") @db.Text
+  mapsLink        String? @map("maps_link") @db.Text
+
+  @@map("company_data")
+}
+
+model Schedule {
+  id    Int     @id @default(autoincrement())
+  day   String  @db.VarChar(50)
+  hours String? @db.VarChar(50)
+  isOpen Boolean @default(true) @map("is_open")
+
+  @@map("schedule")
+}
+
+model Review {
+  id    Int    @id @default(autoincrement())
+  name  String @db.VarChar(255)
+  text  String? @db.Text
+  stars Int    @default(5)
+
+  @@map("reviews")
+}
+
+model Product {
+  id          Int    @id @default(autoincrement())
+  emoji       String? @db.VarChar(10)
+  name        String @db.VarChar(255)
+  description String? @db.Text
+
+  @@map("products")
+}
+
+model AboutFeature {
+  id          Int    @id @default(autoincrement())
+  emoji       String? @db.VarChar(10)
+  title       String @db.VarChar(255)
+  description String? @db.Text
+
+  @@map("about_features")
+}
+
+model AnalyticsVisit {
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime @default(now())
+  page      String?  @db.VarChar(255)
+  referrer  String?  @db.Text
+  userAgent String?  @map("user_agent") @db.Text
+
+  @@map("analytics_visits")
+}
+
+model AnalyticsWhatsapp {
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime @default(now())
+  page      String?  @db.VarChar(255)
+
+  @@map("analytics_whatsapp")
+}

@@ -5,6 +5,7 @@ export const companyData = {
   phone: "(51) 99731-3009",
   phoneRaw: "5551997313009",
   whatsappLink: "https://wa.me/5551997313009?text=Ol%C3%A1%2C%20Quero%20saber%20mais%20de%20como%20funciona%20!",
+  whatsappMessage: "Olá, Quero saber mais de como funciona !",
   rating: 4.7,
   reviewCount: 92,
   mapsEmbed:

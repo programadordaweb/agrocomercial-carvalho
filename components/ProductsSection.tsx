@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
-import { products } from "@/lib/data";
+import { useSiteData } from "@/components/SiteClient";
 
 const productIcons: Record<string, React.ReactNode> = {
   Sementes: (
@@ -48,6 +48,7 @@ const productIcons: Record<string, React.ReactNode> = {
 };
 
 export default function ProductsSection() {
+  const { products } = useSiteData();
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.1 });
 
   return (
