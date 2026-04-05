@@ -44,8 +44,8 @@ export default function Header() {
         transition={{ duration: 0.6, ease: "easeOut" as const }}
         className={`pointer-events-auto transition-all duration-500 ${
           scrolled
-            ? "mt-3 mx-3 sm:mx-6 px-4 sm:px-6 py-2 max-w-4xl w-[calc(100%-24px)] sm:w-[calc(100%-48px)] bg-white/90 backdrop-blur-xl shadow-xl shadow-black/8 rounded-2xl border border-gray-200/60"
-            : "mt-4 mx-4 sm:mx-8 px-5 sm:px-8 py-3 max-w-6xl w-[calc(100%-32px)] sm:w-[calc(100%-64px)] bg-white shadow-lg shadow-black/5 rounded-3xl border border-gray-100"
+            ? "mt-3 mx-3 sm:mx-6 px-4 sm:px-6 py-2 max-w-4xl w-[calc(100%-24px)] sm:w-[calc(100%-48px)] bg-white/20 backdrop-blur-2xl shadow-xl shadow-black/8 rounded-2xl border border-white/30"
+            : "mt-4 mx-4 sm:mx-8 px-5 sm:px-8 py-3 max-w-6xl w-[calc(100%-32px)] sm:w-[calc(100%-64px)] bg-white/15 backdrop-blur-2xl shadow-lg shadow-black/5 rounded-3xl border border-white/20"
         }`}
       >
         <div
